@@ -1,65 +1,43 @@
-const baseURL = "https://ieli15.github.io/json1/db.json";
-const filmsList = document.querySelector("#films");
-const poster = document.querySelector("#poster");
-const title = document.querySelector("#title");
-const runtime = document.querySelector("#runtime");
-const showtime = document.querySelector("#showtime");
-const availableTickets = document.querySelector("#available-tickets");
-const buyButton = document.querySelector("#buy-ticket");
-
-// Load initial movie and movie list
 document.addEventListener("DOMContentLoaded", () => {
-  fetchMovies();
-  fetchMovieDetails(1);
-});
+  const filmsList = document.getElementById("films");
+  const title = document.getElementById("title");
+  const runtime = document.getElementById("runtime");
+  const showtime = document.getElementById("showtime");
+  const availableTickets = document.getElementById("available-tickets");
+  const poster = document.getElementById("poster");
+  const buyTicketButton = document.getElementById("buy-ticket");
 
-// using Fetch to get all movies from the list
-function fetchMovies() {
-  fetch(baseURL)
-    .then((res) => res.json())
-    .then((movies) => {
-      renderMoviesList(movies);
+  // Fetch all films
+  fetch("http://localhost:3000/films")
+    .then((response) => response.json())
+    .then((films) => {
+      filmsList.innerHTML = ""; // Clear placeholder
+      films.forEach((film) => {
+        const li = document.createElement("li");
+        li.className = "film item";
+        li.textContent = film.title;
+        li.addEventListener("click", () => displayMovieDetails(film));
+        filmsList.appendChild(li);
+      });
+
+      // Display details of the first movie by default
+      if (films.length > 0) displayMovieDetails(films[0]);
     });
-}
 
-function renderMoviesList(movies) {
-  filmsList.innerHTML = ""; // Clear placeholder
-  movies.forEach((movie) => {
-    const li = document.createElement("li");
-    li.textContent = movie.title;
-    li.className = "film item";
-    li.addEventListener("click", () => fetchMovieDetails(movie.id));
-    filmsList.appendChild(li);
-  });
-}
+  function displayMovieDetails(film) {
+    title.textContent = film.title;
+    runtime.textContent = film.runtime;
+    showtime.textContent = film.showtime;
+    availableTickets.textContent = film.capacity - film.tickets_sold;
+    poster.src = film.poster;
 
-// Fetch and display movie details
-function fetchMovieDetails(id) {
-  fetch(`${baseURL}/${id}`)
-    .then((res) => res.json())
-    .then((movie) => {
-      displayMovieDetails(movie);
-    });
-}
-
-function displayMovieDetails(movie) {
-  poster.src = movie.poster;
-  title.textContent = movie.title;
-  runtime.textContent = `Runtime: ${movie.runtime} minutes`;
-  showtime.textContent = `Showtime: ${movie.showtime}`;
-  const remainingTickets = movie.capacity - movie.tickets_sold;
-  availableTickets.textContent = `Available Tickets: ${remainingTickets}`;
-  buyButton.onclick = () => handleTicketPurchase(movie, remainingTickets);
-}
-
-// Handle ticket purchase
-function handleTicketPurchase(movie, remainingTickets) {
-  if (remainingTickets > 0) {
-    const updatedTickets = remainingTickets - 1;
-    availableTickets.textContent = `Available Tickets: ${updatedTickets}`;
-    movie.tickets_sold += 1;
-    console.log("Ticket purchased for:", movie.title);
-  } else {
-    alert("Sorry, the show is sold out!");
+    buyTicketButton.onclick = () => {
+      const ticketsLeft = parseInt(availableTickets.textContent);
+      if (ticketsLeft > 0) {
+        availableTickets.textContent = ticketsLeft - 1;
+      } else {
+        alert("Sold Out!");
+      }
+    };
   }
-}
+});
